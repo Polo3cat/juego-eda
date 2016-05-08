@@ -1,3 +1,6 @@
+*
+!*.*
+
 # Compiled Object files
 *.slo
 *.lo
@@ -26,3 +29,9 @@
 *.exe
 *.out
 *.app
+
+#Otros
+*.cnf
+*.deps
+README.txt
+*.sh
