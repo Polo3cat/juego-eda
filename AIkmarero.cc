@@ -28,30 +28,25 @@ struct PLAYER_NAME : public Player {
     /**
      * Attributes for your player can be defined here.
      */     
-   int r = rows();
-   int c = cols();
    bool buscar = true;
-   vector<Dir> recorrido; //El camino que habrá que seguir
-   Pos destino;
-   vector<Dir>::iterator trace; //nos indica donde buscar en el vector que contiene las direcciones
+    //El camino que habrá que seguir
 
    ////////////////////////////////
    //////////FUNCIONES/////////////
    ////////////////////////////////
 
-   Pos busqueda(Pos posActual, CType tipo, vector<Dir>& recorridoFinal){
-        vector<vector<bool> > mVisitado(r, vector<bool>(c, false));
-        vector<vector<int> > mDistancia(r, vector<int>(c, -1));
-        vector<vector<Dir> > mPadre(r, vector<Dir>(c, None));
-
+   vector<Pos> busqueda(Pos posActual, CType tipo){
+        vector< vector<bool> > mVisitado(rows(), vector<bool>(cols(), false));
+        vector< vector<int> > mDistancia(rows(), vector<int>(cols(), -1));
+        vector< vector<Pos> > mPadre(rows(), vector<Pos>(cols()));
+        vector<Pos> recorrido;
         //iniciamos la busqueda en la posActual
         mVisitado[posActual.i][posActual.j] = true;
         mDistancia[posActual.i][posActual.j] = 0;
-        mPadre[posActual.i][posActual.j] = None;
+        vector<Dir> dirs = {Top, Right,Bottom,Left};
         queue<Pos> colaBFS;
         colaBFS.push(posActual);
         bool found = false;
-
         //iniciamos el BFS
         Pos posInicial = posActual;
         Pos posEncontrado;
@@ -59,73 +54,47 @@ struct PLAYER_NAME : public Player {
         while(not found and not colaBFS.empty()) {
             posActual = colaBFS.front();
             colaBFS.pop();
-            posAux = posActual + Left;
-            if (pos_ok(posAux) and not mVisitado[posAux.i][posAux.j] and (cell_type(posAux) != Wall or (cell_type(posAux) == Wall and ghost_wall(posAux) > mDistancia[posActual.i][posActual.j] ) ) ) {
-                mVisitado[posAux.i][posAux.j] = true;
-                mDistancia[posAux.i][posAux.j] = mDistancia[posActual.i][posActual.j] + 1;
-                mPadre[posAux.i][posAux.j] = Right;
-                colaBFS.push(posAux);
-                if (cell_type(posAux) == tipo) {
-                    found = true;
-                    posEncontrado = posAux;
+            for(int i=0;i<dirs.size();++i){
+                posAux = posActual + dirs[i];
+                if (pos_ok(posAux) and not mVisitado[posAux.i][posAux.j] and (cell_type(posAux) != Wall or ghost_wall(posAux)) ) {
+                    mVisitado[posAux.i][posAux.j] = true;
+                    mDistancia[posAux.i][posAux.j] = mDistancia[posActual.i][posActual.j] + 1;
+                    mPadre[posAux.i][posAux.j] = posActual;
+                    colaBFS.push(posAux);
+                    if (cell_type(posAux) == tipo) {
+                        found = true;
+                        posEncontrado = posAux;
+                    }
                 }
+            }   
 
-            }
-
-            posAux = posActual + Top;
-            if (pos_ok(posAux) and not mVisitado[posAux.i][posAux.j] and (cell_type(posAux) != Wall or (cell_type(posAux) == Wall and ghost_wall(posAux) > mDistancia[posActual.i][posActual.j] ) ) ) {
-                mVisitado[posAux.i][posAux.j] = true;
-                mDistancia[posAux.i][posAux.j] = mDistancia[posActual.i][posActual.j] + 1;
-                mPadre[posAux.i][posAux.j] = Bottom;
-                colaBFS.push(posAux);
-                if (cell_type(posAux) == tipo) {
-                    found = true;
-                    posEncontrado = posAux;
-                }
-
-            }
-
-            posAux = posActual + Right;
-            if (pos_ok(posAux) and not mVisitado[posAux.i][posAux.j] and (cell_type(posAux) != Wall or (cell_type(posAux) == Wall and ghost_wall(posAux) > mDistancia[posActual.i][posActual.j] ) ) ) {
-                mVisitado[posAux.i][posAux.j] = true;
-                mDistancia[posAux.i][posAux.j] = mDistancia[posActual.i][posActual.j] + 1;
-                mPadre[posAux.i][posAux.j] = Left;
-                colaBFS.push(posAux);
-                if (cell_type(posAux) == tipo) {
-                    found = true;
-                    posEncontrado = posAux;
-                }
-
-            }
-
-            posAux = posActual + Bottom;
-            if (pos_ok(posAux) and not mVisitado[posAux.i][posAux.j] and (cell_type(posAux) != Wall or (cell_type(posAux) == Wall and ghost_wall(posAux) > mDistancia[posActual.i][posActual.j] ) ) ) {
-                mVisitado[posAux.i][posAux.j] = true;
-                mDistancia[posAux.i][posAux.j] = mDistancia[posActual.i][posActual.j] + 1;
-                mPadre[posAux.i][posAux.j] = Top;
-                colaBFS.push(posAux);
-                if (cell_type(posAux) == tipo) {
-                    found = true;
-                    posEncontrado = posAux;
-                }                
-            }
         }
         //guardamos el recorrido en una pila
         Pos ret = posEncontrado;
-        while(posEncontrado != posInicial) {
-            if (trace != recorridoFinal.end()) {
-                *trace = mPadre[posEncontrado.i][posEncontrado.j];
-                ++trace;
-            }
-            else {
-                recorridoFinal.push_back(mPadre[posEncontrado.i][posEncontrado.j]);
-                trace = recorridoFinal.end() - 1;
-            }
-            posEncontrado = posEncontrado + mPadre[posEncontrado.i][posEncontrado.j];
-        }
-        return ret;
+                while(ret!=posInicial){
+                    recorrido.push_back(ret);
+                    ret = mPadre[ret.i][ret.j];
+                }
+                int i = 0;
+                int j = recorrido.size()-1;
+                while(i<j){
+                    Pos aux = recorrido[i];
+                    recorrido[i] = recorrido[j];
+                    recorrido[j] = aux;
+                    ++i; --j;
+                }
+        return recorrido;
 
     }
+
+    Dir pos2dir(Pos p1, Pos p2) {
+        if(p2.i>p1.i) return Bottom;
+        if(p2.i<p1.i) return Top;
+        if(p2.j>p1.j) return Right;
+        if(p2.j<p1.j) return Left;
+        return None;
+    }
+
     /**
      * Play method.
      * 
@@ -138,10 +107,23 @@ struct PLAYER_NAME : public Player {
     virtual void play () {
         const Poquemon& yo = poquemon(me());
         Action accion;
+        Pos destino;
         if(yo.alive) {
             Pos posActual = yo.pos;
+            vector<Pos> camino = busqueda(posActual, Point);
+            Dir d = pos2dir(posActual, camino[0]);           
+            move(d);
+            cerr << " Estamos en la posicion: ("<< posActual.i <<","<< posActual.j <<").";
+            cerr << "Objeto encontrado en posicion ("<< camino[camino.size()-1] <<")" << endl;
+            cerr << "Path: "; 
+            for(int i=0;i<camino.size();++i){
+                cerr << " ("<< camino[i].i <<","<< camino[i].j <<"), ";
+            }
+            cerr << endl;
+            cerr << "Movimiento: " << d << endl;
+
+         /*   Pos posActual = yo.pos;
             if (buscar) {
-                trace = recorrido.begin();
                 destino = busqueda(posActual, Point, recorrido);
                 buscar = false;
             }
@@ -155,7 +137,7 @@ struct PLAYER_NAME : public Player {
                 if(trace == recorrido.begin()) 
                     buscar = true;
                 accion.move(d);                
-            }
+            }*/
         }
     }
 
